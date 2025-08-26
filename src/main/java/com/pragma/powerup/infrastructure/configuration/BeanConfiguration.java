@@ -1,11 +1,9 @@
 package com.pragma.powerup.infrastructure.configuration;
 
-import com.pragma.powerup.domain.api.IObjectServicePort;
-import com.pragma.powerup.domain.spi.IObjectPersistencePort;
-import com.pragma.powerup.domain.usecase.ObjectUseCase;
-import com.pragma.powerup.infrastructure.out.jpa.adapter.ObjectJpaAdapter;
-import com.pragma.powerup.infrastructure.out.jpa.mapper.IObjectEntityMapper;
-import com.pragma.powerup.infrastructure.out.jpa.repository.IObjectRepository;
+import com.pragma.powerup.domain.api.IOrderServicePort;
+import com.pragma.powerup.domain.spi.IOrderPersistencePort;
+import com.pragma.powerup.domain.usecase.CreateOrderUseCase;
+import com.pragma.powerup.infrastructure.out.jpa.adapter.OrderJpaAdapter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,16 +11,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RequiredArgsConstructor
 public class BeanConfiguration {
-    private final IObjectRepository objectRepository;
-    private final IObjectEntityMapper objectEntityMapper;
+
+    private final OrderJpaAdapter orderJpaAdapter;
 
     @Bean
-    public IObjectPersistencePort objectPersistencePort() {
-        return new ObjectJpaAdapter(objectRepository, objectEntityMapper);
+    public IOrderPersistencePort orderPersistencePort() {
+        return orderJpaAdapter;
     }
 
     @Bean
-    public IObjectServicePort objectServicePort() {
-        return new ObjectUseCase(objectPersistencePort());
+    public IOrderServicePort orderServicePort() {
+        return new CreateOrderUseCase(orderPersistencePort());
     }
 }

@@ -1,0 +1,48 @@
+graph TB
+    %% HU-011: Create Order (High contrast)
+    subgraph "Input Adapters"
+        REST["🌐 REST Controller\nOrderRestController"]
+    end
+
+    subgraph "Application Layer"
+        HANDLER["📋 Handler\nOrderHandler"]
+        REQ_DTO["📤 OrderCreateRequestDto"]
+        RES_DTO["📥 OrderResponseDto"]
+        REQ_MAP["🔄 IOrderRequestMapper"]
+        RES_MAP["🔄 IOrderResponseMapper"]
+    end
+
+    subgraph "Domain Core"
+        MODEL["📊 Order, OrderItem, OrderStatus"]
+        USECASE["⚙️ CreateOrderUseCase"]
+        API_PORT["🔌 IOrderServicePort\n(IN)"]
+        SPI_PORT["🔌 IOrderPersistencePort\n(OUT)"]
+    end
+
+    subgraph "Driven Adapters"
+        JPA_ADAPTER["💾 OrderJpaAdapter"]
+        ENTITY["🗃️ OrderEntity, OrderItemEntity"]
+        REPO["🏪 OrderRepository"]
+        MAP["🔄 IOrderEntityMapper"]
+    end
+
+    REST --> HANDLER
+    HANDLER --> REQ_MAP
+    REQ_MAP --> API_PORT
+    API_PORT --> USECASE
+    USECASE --> SPI_PORT
+    SPI_PORT --> JPA_ADAPTER
+    JPA_ADAPTER --> MAP
+    MAP --> ENTITY
+    ENTITY --> REPO
+
+    %% Styles
+    classDef domain fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#000000
+    classDef app fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000000
+    classDef infra fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000000
+
+    class MODEL,USECASE,API_PORT,SPI_PORT domain
+    class HANDLER,REQ_DTO,RES_DTO,REQ_MAP,RES_MAP app
+    class REST,JPA_ADAPTER,ENTITY,REPO,MAP infra
+
+
