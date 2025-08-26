@@ -1,0 +1,65 @@
+package com.pragma.powerup.architecture;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
+
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.lang.ArchRule;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+class HexagonalArchitectureTest {
+
+    private static JavaClasses classes;
+
+    @BeforeAll
+    static void loadClasses() {
+        classes = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_JARS)
+                .importPackages(
+                        "com.pragma.powerup.domain",
+                        "com.pragma.powerup.application",
+                        "com.pragma.powerup.infrastructure");
+    }
+
+    private ArchRule allowEmpty(ArchRule rule) {
+        return rule.allowEmptyShould(true);
+    }
+
+    @Test
+    @DisplayName("Domain must not depend on application or infrastructure")
+    void domainDoesNotDependOnOtherLayers() {
+        ArchRule rule = noClasses()
+                .that()
+                .resideInAPackage("..domain..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage("..application..", "..infrastructure..", "..configuration..")
+                .because("Domain must be pure and independent");
+        allowEmpty(rule).check(classes);
+    }
+
+    @Test
+    @DisplayName("Application must not depend on infrastructure")
+    void applicationDoesNotDependOnInfrastructure() {
+        ArchRule rule = noClasses()
+                .that()
+                .resideInAPackage("..application..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage("..infrastructure..")
+                .because("Application orchestrates domain and should not know infrastructure");
+        allowEmpty(rule).check(classes);
+    }
+
+    @Test
+    @DisplayName("No cyclic dependencies between packages")
+    void noCyclicDependencies() {
+        ArchRule rule = slices().matching("com.pragma.powerup.(*)..").should().beFreeOfCycles();
+        allowEmpty(rule).check(classes);
+    }
+}
