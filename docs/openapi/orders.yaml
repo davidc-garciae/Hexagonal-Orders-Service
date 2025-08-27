@@ -77,6 +77,28 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401': { description: Unauthorized }
         '403': { description: Forbidden }
+  /api/v1/orders/{id}/ready:
+    put:
+      tags: [Orders]
+      summary: Mark order as LISTO (generates PIN and publishes event)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400': { description: Bad request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '404': { description: Not found }
+
+  
   /api/v1/orders/{id}/assign:
     put:
       tags: [Orders]

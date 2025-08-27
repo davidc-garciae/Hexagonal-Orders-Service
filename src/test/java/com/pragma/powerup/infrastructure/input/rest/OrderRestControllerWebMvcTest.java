@@ -35,6 +35,8 @@ class OrderRestControllerWebMvcTest {
     private com.pragma.powerup.application.handler.IOrderQueryHandler orderQueryHandler;
     @Autowired
     private com.pragma.powerup.application.handler.IOrderAssignHandler orderAssignHandler;
+    @Autowired
+    private com.pragma.powerup.application.handler.IOrderReadyHandler orderReadyHandler;
 
     @org.springframework.boot.test.context.TestConfiguration
     static class TestConfig {
@@ -52,6 +54,27 @@ class OrderRestControllerWebMvcTest {
         com.pragma.powerup.application.handler.IOrderAssignHandler orderAssignHandler() {
             return Mockito.mock(com.pragma.powerup.application.handler.IOrderAssignHandler.class);
         }
+
+        @Bean
+        com.pragma.powerup.application.handler.IOrderReadyHandler orderReadyHandler() {
+            return Mockito.mock(com.pragma.powerup.application.handler.IOrderReadyHandler.class);
+        }
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/orders/{id}/ready returns 200")
+    void ready_ok() throws Exception {
+        var resp = new OrderResponseDto();
+        resp.setId(1L);
+        Mockito.when(orderReadyHandler.markReady(Mockito.anyLong())).thenReturn(resp);
+
+        mockMvc
+                .perform(
+                        put("/api/v1/orders/1/ready")
+                                .header("X-User-Id", "9")
+                                .header("X-User-Email", "e@x.com")
+                                .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isOk());
     }
 
     @Test
