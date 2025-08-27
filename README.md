@@ -40,7 +40,7 @@ Documentación OpenAPI: ver `docs/openapi/orders.yaml`.
 ./gradlew spotlessApply
 ./gradlew test jacocoTestReport
 ./gradlew bootRun
-# Swagger UI: http://localhost:8080/swagger-ui/index.html
+# Swagger UI: http://localhost:8083/swagger-ui/index.html
 ```
 
 Variables relevantes (`application.yml`/env):
