@@ -1,9 +1,11 @@
 package com.pragma.powerup.infrastructure.input.rest;
 
 import com.pragma.powerup.application.dto.request.OrderCreateRequestDto;
+import com.pragma.powerup.application.dto.request.OrderDeliverRequestDto;
 import com.pragma.powerup.application.dto.response.OrderPageResponseDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
 import com.pragma.powerup.application.handler.IOrderAssignHandler;
+import com.pragma.powerup.application.handler.IOrderDeliverHandler;
 import com.pragma.powerup.application.handler.IOrderHandler;
 import com.pragma.powerup.application.handler.IOrderQueryHandler;
 import com.pragma.powerup.application.handler.IOrderReadyHandler;
@@ -30,7 +32,7 @@ public class OrderRestController {
   private final IOrderQueryHandler orderQueryHandler;
   private final IOrderAssignHandler orderAssignHandler;
   private final IOrderReadyHandler orderReadyHandler;
-  
+  private final IOrderDeliverHandler orderDeliverHandler;
 
   @Operation(summary = "Create order (CUSTOMER)")
   @ApiResponses({
@@ -118,5 +120,22 @@ public class OrderRestController {
     return ResponseEntity.ok(resp);
   }
 
-  
+  @Operation(summary = "Deliver order (EMPLOYEE)")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "OK"),
+    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "404", description = "Not Found")
+  })
+  @org.springframework.web.bind.annotation.PutMapping("/{id}/deliver")
+  @org.springframework.security.access.prepost.PreAuthorize(
+      "hasRole('" + RoleConstants.EMPLOYEE + "')")
+  public ResponseEntity<com.pragma.powerup.application.dto.response.OrderResponseDto> deliver(
+      @org.springframework.web.bind.annotation.PathVariable("id") Long orderId,
+      @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid
+          OrderDeliverRequestDto request,
+      HttpServletRequest httpRequest) {
+    Long employeeId = extractUserId(httpRequest);
+    var resp = orderDeliverHandler.deliver(orderId, request);
+    return ResponseEntity.ok(resp);
+  }
 }

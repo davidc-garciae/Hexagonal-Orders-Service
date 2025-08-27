@@ -38,6 +38,9 @@ class OrderRestControllerWebMvcTest {
     @Autowired
     private com.pragma.powerup.application.handler.IOrderReadyHandler orderReadyHandler;
 
+    @Autowired
+    private com.pragma.powerup.application.handler.IOrderDeliverHandler orderDeliverHandler;
+
     @org.springframework.boot.test.context.TestConfiguration
     static class TestConfig {
         @Bean
@@ -59,6 +62,29 @@ class OrderRestControllerWebMvcTest {
         com.pragma.powerup.application.handler.IOrderReadyHandler orderReadyHandler() {
             return Mockito.mock(com.pragma.powerup.application.handler.IOrderReadyHandler.class);
         }
+
+        @Bean
+        com.pragma.powerup.application.handler.IOrderDeliverHandler orderDeliverHandler() {
+            return Mockito.mock(com.pragma.powerup.application.handler.IOrderDeliverHandler.class);
+        }
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/orders/{id}/deliver returns 200")
+    void deliver_ok() throws Exception {
+        var resp = new OrderResponseDto();
+        resp.setId(1L);
+        Mockito.when(orderDeliverHandler.deliver(Mockito.anyLong(), Mockito.any())).thenReturn(resp);
+
+        mockMvc
+                .perform(
+                        put("/api/v1/orders/1/deliver")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"pin\":\"123456\"}")
+                                .header("X-User-Id", "9")
+                                .header("X-User-Email", "e@x.com")
+                                .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isOk());
     }
 
     @Test

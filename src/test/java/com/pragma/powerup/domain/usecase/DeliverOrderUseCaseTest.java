@@ -15,41 +15,43 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-class AssignOrderUseCaseTest {
+class DeliverOrderUseCaseTest {
 
   private IOrderPersistencePort persistence;
-  private AssignOrderUseCase useCase;
+  private DeliverOrderUseCase useCase;
 
   @BeforeEach
   void setup() {
     persistence = Mockito.mock(IOrderPersistencePort.class);
-    useCase = new AssignOrderUseCase(persistence);
+    useCase = new DeliverOrderUseCase(persistence);
   }
 
   @Test
-  @DisplayName("Should assign PENDIENTE order and set EN_PREPARACION")
+  @DisplayName("Should deliver when status LISTO and pin matches")
   void ok() {
     Order o = new Order();
     o.setId(1L);
-    o.setStatus(OrderStatus.PENDIENTE);
+    o.setStatus(OrderStatus.LISTO);
+    o.setPin("123456");
     when(persistence.findById(1L)).thenReturn(Optional.of(o));
     when(persistence.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    Order r = useCase.assignOrder(1L, 99L);
-    assertThat(r.getEmployeeId()).isEqualTo(99L);
-    assertThat(r.getStatus()).isEqualTo(OrderStatus.EN_PREPARACION);
+    Order r = useCase.deliver(1L, "123456");
+    assertThat(r.getStatus()).isEqualTo(OrderStatus.ENTREGADO);
   }
 
   @Test
-  @DisplayName("Should fail when order not found or status invalid")
+  @DisplayName("Should fail when wrong pin or invalid status")
   void errors() {
-    when(persistence.findById(1L)).thenReturn(Optional.empty());
-    assertThatThrownBy(() -> useCase.assignOrder(1L, 10L)).isInstanceOf(DomainException.class);
-
     Order o = new Order();
-    o.setId(2L);
+    o.setId(1L);
     o.setStatus(OrderStatus.LISTO);
-    when(persistence.findById(2L)).thenReturn(Optional.of(o));
-    assertThatThrownBy(() -> useCase.assignOrder(2L, 10L)).isInstanceOf(DomainException.class);
+    o.setPin("123456");
+    when(persistence.findById(1L)).thenReturn(Optional.of(o));
+
+    assertThatThrownBy(() -> useCase.deliver(1L, "0000")).isInstanceOf(DomainException.class);
+
+    o.setStatus(OrderStatus.PENDIENTE);
+    assertThatThrownBy(() -> useCase.deliver(1L, "123456")).isInstanceOf(DomainException.class);
   }
 }

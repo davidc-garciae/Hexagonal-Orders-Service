@@ -7,11 +7,11 @@ import com.pragma.powerup.domain.model.OrderStatus;
 import com.pragma.powerup.domain.model.PagedResult;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 
-public class AssignOrderUseCase implements IOrderServicePort {
+public class DeliverOrderUseCase implements IOrderServicePort {
 
   private final IOrderPersistencePort orderPersistencePort;
 
-  public AssignOrderUseCase(IOrderPersistencePort orderPersistencePort) {
+  public DeliverOrderUseCase(IOrderPersistencePort orderPersistencePort) {
     this.orderPersistencePort = orderPersistencePort;
   }
 
@@ -28,15 +28,21 @@ public class AssignOrderUseCase implements IOrderServicePort {
 
   @Override
   public Order assignOrder(Long orderId, Long employeeId) {
+    throw new UnsupportedOperationException("Not supported in this use case");
+  }
+
+  public Order deliver(Long orderId, String pin) {
     Order order =
         orderPersistencePort
             .findById(orderId)
             .orElseThrow(() -> new DomainException("Order not found"));
-    if (order.getStatus() != OrderStatus.PENDIENTE) {
-      throw new DomainException("Only PENDIENTE orders can be assigned");
+    if (order.getStatus() != OrderStatus.LISTO) {
+      throw new DomainException("Only LISTO orders can be delivered");
     }
-    order.setEmployeeId(employeeId);
-    order.setStatus(OrderStatus.EN_PREPARACION);
+    if (order.getPin() == null || !order.getPin().equals(pin)) {
+      throw new DomainException("Invalid PIN");
+    }
+    order.setStatus(OrderStatus.ENTREGADO);
     return orderPersistencePort.save(order);
   }
 }

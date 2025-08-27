@@ -51,9 +51,10 @@ public class CreateOrderUseCase implements IOrderServicePort {
     if (order.getItems() == null || order.getItems().isEmpty()) {
       throw new DomainException("items must not be empty");
     }
-    boolean anyInvalid = order.getItems().stream()
-        .anyMatch(
-            i -> i.getDishId() == null || i.getQuantity() == null || i.getQuantity() <= 0);
+    boolean anyInvalid =
+        order.getItems().stream()
+            .anyMatch(
+                i -> i.getDishId() == null || i.getQuantity() == null || i.getQuantity() <= 0);
     if (anyInvalid) {
       throw new DomainException("Each item must have dishId and quantity > 0");
     }

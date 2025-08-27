@@ -5,6 +5,7 @@ import com.pragma.powerup.domain.spi.IOrderEventPublisherPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.usecase.AssignOrderUseCase;
 import com.pragma.powerup.domain.usecase.CreateOrderUseCase;
+import com.pragma.powerup.domain.usecase.DeliverOrderUseCase;
 import com.pragma.powerup.domain.usecase.ListOrdersByStatusUseCase;
 import com.pragma.powerup.domain.usecase.MarkOrderReadyUseCase;
 import com.pragma.powerup.infrastructure.out.jpa.adapter.OrderJpaAdapter;
@@ -44,5 +45,8 @@ public class BeanConfiguration {
     return new MarkOrderReadyUseCase(orderPersistencePort, eventPublisherPort);
   }
 
-  
+  @Bean
+  public DeliverOrderUseCase deliverOrderUseCase(IOrderPersistencePort orderPersistencePort) {
+    return new DeliverOrderUseCase(orderPersistencePort);
+  }
 }

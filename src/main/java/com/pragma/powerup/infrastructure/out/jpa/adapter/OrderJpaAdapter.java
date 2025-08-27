@@ -22,10 +22,11 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
 
   @Override
   public boolean customerHasActiveOrder(Long customerId) {
-    List<com.pragma.powerup.domain.model.OrderStatus> active = List.of(
-        com.pragma.powerup.domain.model.OrderStatus.PENDIENTE,
-        com.pragma.powerup.domain.model.OrderStatus.EN_PREPARACION,
-        com.pragma.powerup.domain.model.OrderStatus.LISTO);
+    List<com.pragma.powerup.domain.model.OrderStatus> active =
+        List.of(
+            com.pragma.powerup.domain.model.OrderStatus.PENDIENTE,
+            com.pragma.powerup.domain.model.OrderStatus.EN_PREPARACION,
+            com.pragma.powerup.domain.model.OrderStatus.LISTO);
     return orderRepository.existsByCustomerIdAndStatusIn(customerId, active);
   }
 
@@ -51,8 +52,9 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
   @Override
   public PagedResult<Order> findByRestaurantAndStatus(
       Long restaurantId, OrderStatus status, int page, int size) {
-    Page<OrderEntity> p = orderRepository.findByRestaurantIdAndStatus(
-        restaurantId, status, PageRequest.of(page, size));
+    Page<OrderEntity> p =
+        orderRepository.findByRestaurantIdAndStatus(
+            restaurantId, status, PageRequest.of(page, size));
     List<Order> content = p.getContent().stream().map(orderEntityMapper::toModel).toList();
     return new PagedResult<>(content, page, size, p.getTotalElements(), p.getTotalPages());
   }
