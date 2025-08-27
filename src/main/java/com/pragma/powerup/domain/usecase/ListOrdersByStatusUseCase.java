@@ -23,9 +23,17 @@ public class ListOrdersByStatusUseCase implements IOrderServicePort {
   @Override
   public PagedResult<Order> listByStatusAndRestaurant(
       Long restaurantId, OrderStatus status, int page, int size) {
-    if (restaurantId == null) throw new DomainException("restaurantId is required");
-    if (status == null) throw new DomainException("status is required");
-    if (page < 0 || size <= 0) throw new DomainException("invalid pagination parameters");
+    if (restaurantId == null)
+      throw new DomainException("restaurantId is required");
+    if (status == null)
+      throw new DomainException("status is required");
+    if (page < 0 || size <= 0)
+      throw new DomainException("invalid pagination parameters");
     return orderPersistencePort.findByRestaurantAndStatus(restaurantId, status, page, size);
+  }
+
+  @Override
+  public Order assignOrder(Long orderId, Long employeeId) {
+    throw new UnsupportedOperationException("Not supported in this use case");
   }
 }

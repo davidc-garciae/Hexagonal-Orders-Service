@@ -3,6 +3,7 @@ package com.pragma.powerup.infrastructure.input.rest;
 import com.pragma.powerup.application.dto.request.OrderCreateRequestDto;
 import com.pragma.powerup.application.dto.response.OrderPageResponseDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
+import com.pragma.powerup.application.handler.IOrderAssignHandler;
 import com.pragma.powerup.application.handler.IOrderHandler;
 import com.pragma.powerup.application.handler.IOrderQueryHandler;
 import com.pragma.powerup.infrastructure.security.RoleConstants;
@@ -26,6 +27,7 @@ public class OrderRestController {
 
     private final IOrderHandler orderHandler;
     private final IOrderQueryHandler orderQueryHandler;
+    private final IOrderAssignHandler orderAssignHandler;
 
     @Operation(summary = "Create order (CUSTOMER)")
     @ApiResponses({
@@ -72,5 +74,21 @@ public class OrderRestController {
     private Long extractUserId(HttpServletRequest request) {
         String id = request.getHeader("X-User-Id");
         return id == null ? null : Long.valueOf(id);
+    }
+
+    @Operation(summary = "Assign order (EMPLOYEE)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found")
+    })
+    @org.springframework.web.bind.annotation.PutMapping("/{id}/assign")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('" + RoleConstants.EMPLOYEE + "')")
+    public ResponseEntity<com.pragma.powerup.application.dto.response.OrderResponseDto> assign(
+            @org.springframework.web.bind.annotation.PathVariable("id") Long orderId,
+            HttpServletRequest httpRequest) {
+        Long employeeId = extractUserId(httpRequest);
+        var resp = orderAssignHandler.assign(orderId, employeeId);
+        return ResponseEntity.ok(resp);
     }
 }

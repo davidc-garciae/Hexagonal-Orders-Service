@@ -2,6 +2,7 @@ package com.pragma.powerup.infrastructure.input.rest;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,8 @@ class OrderRestControllerWebMvcTest {
     private IOrderHandler orderHandler;
     @Autowired
     private com.pragma.powerup.application.handler.IOrderQueryHandler orderQueryHandler;
+    @Autowired
+    private com.pragma.powerup.application.handler.IOrderAssignHandler orderAssignHandler;
 
     @org.springframework.boot.test.context.TestConfiguration
     static class TestConfig {
@@ -44,6 +47,27 @@ class OrderRestControllerWebMvcTest {
         com.pragma.powerup.application.handler.IOrderQueryHandler orderQueryHandler() {
             return Mockito.mock(com.pragma.powerup.application.handler.IOrderQueryHandler.class);
         }
+
+        @Bean
+        com.pragma.powerup.application.handler.IOrderAssignHandler orderAssignHandler() {
+            return Mockito.mock(com.pragma.powerup.application.handler.IOrderAssignHandler.class);
+        }
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/orders/{id}/assign returns 200")
+    void assign_ok() throws Exception {
+        var resp = new OrderResponseDto();
+        resp.setId(1L);
+        Mockito.when(orderAssignHandler.assign(Mockito.anyLong(), Mockito.anyLong())).thenReturn(resp);
+
+        mockMvc
+                .perform(
+                        put("/api/v1/orders/1/assign")
+                                .header("X-User-Id", "9")
+                                .header("X-User-Email", "e@x.com")
+                                .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isOk());
     }
 
     @Test

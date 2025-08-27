@@ -9,4 +9,6 @@ public interface IOrderServicePort {
 
   PagedResult<Order> listByStatusAndRestaurant(
       Long restaurantId, OrderStatus status, int page, int size);
+
+  Order assignOrder(Long orderId, Long employeeId);
 }

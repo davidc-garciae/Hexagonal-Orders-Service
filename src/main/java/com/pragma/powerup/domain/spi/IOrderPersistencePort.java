@@ -13,4 +13,6 @@ public interface IOrderPersistencePort {
 
   PagedResult<Order> findByRestaurantAndStatus(
       Long restaurantId, OrderStatus status, int page, int size);
+
+  java.util.Optional<Order> findById(Long orderId);
 }

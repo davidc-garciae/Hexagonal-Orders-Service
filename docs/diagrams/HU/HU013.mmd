@@ -1,0 +1,38 @@
+graph TB
+    %% HU-013: Assign Order (High contrast)
+    subgraph "Input Adapters"
+        REST["🌐 REST Controller\nPUT /api/v1/orders/{id}/assign"]
+    end
+
+    subgraph "Application Layer"
+        HANDLER["📋 OrderAssignHandler"]
+        RES_DTO["📥 OrderResponseDto"]
+        RES_MAP["🔄 IOrderResponseMapper"]
+    end
+
+    subgraph "Domain Core"
+        USECASE["⚙️ AssignOrderUseCase"]
+        API["🔌 IOrderServicePort (IN)"]
+        SPI["🔌 IOrderPersistencePort (OUT)"]
+        MODEL["📊 Order, OrderStatus"]
+    end
+
+    subgraph "Driven Adapters"
+        JPA_ADAPTER["💾 OrderJpaAdapter (findById, save)"]
+        REPO["🏪 OrderRepository"]
+    end
+
+    REST --> HANDLER
+    HANDLER --> API
+    API --> USECASE
+    USECASE --> SPI
+    SPI --> JPA_ADAPTER
+    JPA_ADAPTER --> REPO
+
+    classDef domain fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#000000
+    classDef app fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000000
+    classDef infra fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000000
+
+    class USECASE,API,SPI,MODEL domain
+    class HANDLER,RES_DTO,RES_MAP app
+    class REST,JPA_ADAPTER,REPO infra

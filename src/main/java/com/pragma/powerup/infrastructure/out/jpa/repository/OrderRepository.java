@@ -7,9 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
-  boolean existsByCustomerIdAndStatusIn(
-      Long customerId, java.util.Collection<com.pragma.powerup.domain.model.OrderStatus> statuses);
+    boolean existsByCustomerIdAndStatusIn(
+            Long customerId, java.util.Collection<com.pragma.powerup.domain.model.OrderStatus> statuses);
 
-  Page<OrderEntity> findByRestaurantIdAndStatus(
-      Long restaurantId, OrderStatus status, Pageable pageable);
+    Page<OrderEntity> findByRestaurantIdAndStatus(
+            Long restaurantId, OrderStatus status, Pageable pageable);
 }
