@@ -8,6 +8,7 @@ import com.pragma.powerup.domain.usecase.CreateOrderUseCase;
 import com.pragma.powerup.domain.usecase.DeliverOrderUseCase;
 import com.pragma.powerup.domain.usecase.ListOrdersByStatusUseCase;
 import com.pragma.powerup.domain.usecase.MarkOrderReadyUseCase;
+import com.pragma.powerup.domain.usecase.CancelOrderUseCase;
 import com.pragma.powerup.infrastructure.out.jpa.adapter.OrderJpaAdapter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -48,5 +49,10 @@ public class BeanConfiguration {
   @Bean
   public DeliverOrderUseCase deliverOrderUseCase(IOrderPersistencePort orderPersistencePort) {
     return new DeliverOrderUseCase(orderPersistencePort);
+  }
+
+  @Bean
+  public CancelOrderUseCase cancelOrderUseCase(IOrderPersistencePort orderPersistencePort) {
+    return new CancelOrderUseCase(orderPersistencePort);
   }
 }

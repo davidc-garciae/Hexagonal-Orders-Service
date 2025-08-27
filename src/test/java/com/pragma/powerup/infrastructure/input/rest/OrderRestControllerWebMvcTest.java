@@ -37,6 +37,8 @@ class OrderRestControllerWebMvcTest {
     private com.pragma.powerup.application.handler.IOrderAssignHandler orderAssignHandler;
     @Autowired
     private com.pragma.powerup.application.handler.IOrderReadyHandler orderReadyHandler;
+    @Autowired
+    private com.pragma.powerup.application.handler.IOrderCancelHandler orderCancelHandler;
 
     @Autowired
     private com.pragma.powerup.application.handler.IOrderDeliverHandler orderDeliverHandler;
@@ -64,9 +66,30 @@ class OrderRestControllerWebMvcTest {
         }
 
         @Bean
+        com.pragma.powerup.application.handler.IOrderCancelHandler orderCancelHandler() {
+            return Mockito.mock(com.pragma.powerup.application.handler.IOrderCancelHandler.class);
+        }
+
+        @Bean
         com.pragma.powerup.application.handler.IOrderDeliverHandler orderDeliverHandler() {
             return Mockito.mock(com.pragma.powerup.application.handler.IOrderDeliverHandler.class);
         }
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/orders/{id}/cancel returns 200")
+    void cancel_ok() throws Exception {
+        var resp = new OrderResponseDto();
+        resp.setId(1L);
+        Mockito.when(orderCancelHandler.cancel(Mockito.anyLong(), Mockito.anyLong())).thenReturn(resp);
+
+        mockMvc
+                .perform(
+                        put("/api/v1/orders/1/cancel")
+                                .header("X-User-Id", "7")
+                                .header("X-User-Email", "c@x.com")
+                                .header("X-User-Role", "CUSTOMER"))
+                .andExpect(status().isOk());
     }
 
     @Test

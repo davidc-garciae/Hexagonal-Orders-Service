@@ -1,0 +1,37 @@
+graph TB
+    %% HU-016: Cancel Order (High contrast)
+    subgraph "Input Adapters"
+        REST["🌐 REST Controller\nPUT /api/v1/orders/{id}/cancel"]
+    end
+
+    subgraph "Application Layer"
+        HANDLER["📋 OrderCancelHandler"]
+        RES_DTO["📥 OrderResponseDto"]
+        RES_MAP["🔄 IOrderResponseMapper"]
+    end
+
+    subgraph "Domain Core"
+        USECASE["⚙️ CancelOrderUseCase"]
+        API["🔌 IOrderServicePort (IN)"]
+        SPI["🔌 IOrderPersistencePort (OUT)"]
+        MODEL["📊 Order, OrderStatus"]
+    end
+
+    subgraph "Driven Adapters"
+        JPA_ADAPTER["💾 OrderJpaAdapter (findById, save)"]
+    end
+
+    REST --> HANDLER
+    HANDLER --> USECASE
+    USECASE --> SPI
+    SPI --> JPA_ADAPTER
+
+    classDef domain fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#000000
+    classDef app fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000000
+    classDef infra fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000000
+
+    class USECASE,API,SPI,MODEL domain
+    class HANDLER,RES_DTO,RES_MAP app
+    class REST,JPA_ADAPTER infra
+
+

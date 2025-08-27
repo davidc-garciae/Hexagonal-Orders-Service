@@ -9,6 +9,7 @@ import com.pragma.powerup.application.handler.IOrderDeliverHandler;
 import com.pragma.powerup.application.handler.IOrderHandler;
 import com.pragma.powerup.application.handler.IOrderQueryHandler;
 import com.pragma.powerup.application.handler.IOrderReadyHandler;
+import com.pragma.powerup.application.handler.IOrderCancelHandler;
 import com.pragma.powerup.infrastructure.security.RoleConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,13 +33,14 @@ public class OrderRestController {
   private final IOrderQueryHandler orderQueryHandler;
   private final IOrderAssignHandler orderAssignHandler;
   private final IOrderReadyHandler orderReadyHandler;
+  private final IOrderCancelHandler orderCancelHandler;
   private final IOrderDeliverHandler orderDeliverHandler;
 
   @Operation(summary = "Create order (CUSTOMER)")
   @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Created"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
-    @ApiResponse(responseCode = "409", description = "Conflict")
+      @ApiResponse(responseCode = "201", description = "Created"),
+      @ApiResponse(responseCode = "400", description = "Bad Request"),
+      @ApiResponse(responseCode = "409", description = "Conflict")
   })
   @PostMapping
   @PreAuthorize("hasRole('" + RoleConstants.CUSTOMER + "')")
@@ -56,26 +58,23 @@ public class OrderRestController {
 
   @Operation(summary = "List orders by status and restaurant (EMPLOYEE/OWNER)")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "OK"),
-    @ApiResponse(responseCode = "400", description = "Bad Request")
+      @ApiResponse(responseCode = "200", description = "OK"),
+      @ApiResponse(responseCode = "400", description = "Bad Request")
   })
   @org.springframework.web.bind.annotation.GetMapping
-  @org.springframework.security.access.prepost.PreAuthorize(
-      "hasAnyRole('" + RoleConstants.EMPLOYEE + "','" + RoleConstants.OWNER + "')")
+  @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('" + RoleConstants.EMPLOYEE + "','"
+      + RoleConstants.OWNER + "')")
   public ResponseEntity<OrderPageResponseDto> list(
       @org.springframework.web.bind.annotation.RequestParam("status") String status,
       @org.springframework.web.bind.annotation.RequestParam("restaurantId") Long restaurantId,
-      @org.springframework.web.bind.annotation.RequestParam(value = "page", defaultValue = "0")
-          int page,
-      @org.springframework.web.bind.annotation.RequestParam(value = "size", defaultValue = "10")
-          int size,
+      @org.springframework.web.bind.annotation.RequestParam(value = "page", defaultValue = "0") int page,
+      @org.springframework.web.bind.annotation.RequestParam(value = "size", defaultValue = "10") int size,
       HttpServletRequest httpRequest) {
 
     Long userId = extractUserId(httpRequest);
     // Nota: validación de pertenencia a restaurante se integrará con users-service
     // en HU posterior.
-    OrderPageResponseDto result =
-        orderQueryHandler.listByStatusAndRestaurant(restaurantId, status, page, size);
+    OrderPageResponseDto result = orderQueryHandler.listByStatusAndRestaurant(restaurantId, status, page, size);
     return ResponseEntity.ok(result);
   }
 
@@ -86,13 +85,12 @@ public class OrderRestController {
 
   @Operation(summary = "Assign order (EMPLOYEE)")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "OK"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
-    @ApiResponse(responseCode = "404", description = "Not Found")
+      @ApiResponse(responseCode = "200", description = "OK"),
+      @ApiResponse(responseCode = "400", description = "Bad Request"),
+      @ApiResponse(responseCode = "404", description = "Not Found")
   })
   @org.springframework.web.bind.annotation.PutMapping("/{id}/assign")
-  @org.springframework.security.access.prepost.PreAuthorize(
-      "hasRole('" + RoleConstants.EMPLOYEE + "')")
+  @org.springframework.security.access.prepost.PreAuthorize("hasRole('" + RoleConstants.EMPLOYEE + "')")
   public ResponseEntity<com.pragma.powerup.application.dto.response.OrderResponseDto> assign(
       @org.springframework.web.bind.annotation.PathVariable("id") Long orderId,
       HttpServletRequest httpRequest) {
@@ -103,13 +101,12 @@ public class OrderRestController {
 
   @Operation(summary = "Mark order as ready (EMPLOYEE)")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "OK"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
-    @ApiResponse(responseCode = "404", description = "Not Found")
+      @ApiResponse(responseCode = "200", description = "OK"),
+      @ApiResponse(responseCode = "400", description = "Bad Request"),
+      @ApiResponse(responseCode = "404", description = "Not Found")
   })
   @org.springframework.web.bind.annotation.PutMapping("/{id}/ready")
-  @org.springframework.security.access.prepost.PreAuthorize(
-      "hasRole('" + RoleConstants.EMPLOYEE + "')")
+  @org.springframework.security.access.prepost.PreAuthorize("hasRole('" + RoleConstants.EMPLOYEE + "')")
   public ResponseEntity<com.pragma.powerup.application.dto.response.OrderResponseDto> ready(
       @org.springframework.web.bind.annotation.PathVariable("id") Long orderId,
       HttpServletRequest httpRequest) {
@@ -120,19 +117,33 @@ public class OrderRestController {
     return ResponseEntity.ok(resp);
   }
 
+  @Operation(summary = "Cancel order (CUSTOMER)")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "OK"),
+      @ApiResponse(responseCode = "400", description = "Bad Request"),
+      @ApiResponse(responseCode = "404", description = "Not Found")
+  })
+  @org.springframework.web.bind.annotation.PutMapping("/{id}/cancel")
+  @org.springframework.security.access.prepost.PreAuthorize("hasRole('" + RoleConstants.CUSTOMER + "')")
+  public ResponseEntity<com.pragma.powerup.application.dto.response.OrderResponseDto> cancel(
+      @org.springframework.web.bind.annotation.PathVariable("id") Long orderId,
+      HttpServletRequest httpRequest) {
+    Long customerId = extractUserId(httpRequest);
+    var resp = orderCancelHandler.cancel(orderId, customerId);
+    return ResponseEntity.ok(resp);
+  }
+
   @Operation(summary = "Deliver order (EMPLOYEE)")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "OK"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
-    @ApiResponse(responseCode = "404", description = "Not Found")
+      @ApiResponse(responseCode = "200", description = "OK"),
+      @ApiResponse(responseCode = "400", description = "Bad Request"),
+      @ApiResponse(responseCode = "404", description = "Not Found")
   })
   @org.springframework.web.bind.annotation.PutMapping("/{id}/deliver")
-  @org.springframework.security.access.prepost.PreAuthorize(
-      "hasRole('" + RoleConstants.EMPLOYEE + "')")
+  @org.springframework.security.access.prepost.PreAuthorize("hasRole('" + RoleConstants.EMPLOYEE + "')")
   public ResponseEntity<com.pragma.powerup.application.dto.response.OrderResponseDto> deliver(
       @org.springframework.web.bind.annotation.PathVariable("id") Long orderId,
-      @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid
-          OrderDeliverRequestDto request,
+      @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid OrderDeliverRequestDto request,
       HttpServletRequest httpRequest) {
     Long employeeId = extractUserId(httpRequest);
     var resp = orderDeliverHandler.deliver(orderId, request);
