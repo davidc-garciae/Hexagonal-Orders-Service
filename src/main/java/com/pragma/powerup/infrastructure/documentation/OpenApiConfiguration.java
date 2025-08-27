@@ -11,16 +11,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfiguration {
 
-    @Bean
-    public OpenAPI customOpenApi(@Value("${appdescription:PowerUp API}") String appDescription,
-                                 @Value("${appversion:dev}") String appVersion) {
-        return new OpenAPI()
-                .components(new Components())
-                .info(new Info()
-                        .title("Hexagonal Power-up API")
-                        .version(appVersion)
-                        .description(appDescription)
-                        .termsOfService("http://swagger.io/terms/")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")));
-    }
+  @Bean
+  public OpenAPI customOpenApi(
+      @Value("${appdescription:PowerUp API}") String appDescription,
+      @Value("${appversion:dev}") String appVersion) {
+    return new OpenAPI()
+        .components(new Components())
+        .info(
+            new Info()
+                .title("Hexagonal Power-up API")
+                .version(appVersion)
+                .description(appDescription)
+                .termsOfService("http://swagger.io/terms/")
+                .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+  }
 }

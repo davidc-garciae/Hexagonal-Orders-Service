@@ -12,23 +12,19 @@ import lombok.Setter;
 @Setter
 public class OrderCreateRequestDto {
 
-    @NotNull
-    private Long customerId;
+  @NotNull private Long customerId;
+
+  @NotNull private Long restaurantId;
+
+  @NotEmpty private List<@Valid OrderItemRequestDto> items;
+
+  @Getter
+  @Setter
+  public static class OrderItemRequestDto {
+    @NotNull private Long dishId;
 
     @NotNull
-    private Long restaurantId;
-
-    @NotEmpty
-    private List<@Valid OrderItemRequestDto> items;
-
-    @Getter
-    @Setter
-    public static class OrderItemRequestDto {
-        @NotNull
-        private Long dishId;
-
-        @NotNull
-        @Min(1)
-        private Integer quantity;
-    }
+    @Min(1)
+    private Integer quantity;
+  }
 }

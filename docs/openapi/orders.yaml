@@ -8,7 +8,7 @@ servers:
 security:
   - bearerAuth: []
 paths:
-  /api/v1/pedidos:
+  /api/v1/orders:
     post:
       tags: [Orders]
       summary: Create order (CUSTOMER)
@@ -51,10 +51,10 @@ paths:
       summary: List orders by status and restaurant (EMPLOYEE/OWNER)
       parameters:
         - in: query
-          name: estado
+          name: status
           schema: { type: string, enum: [PENDIENTE, EN_PREPARACION, LISTO, ENTREGADO, CANCELADO] }
         - in: query
-          name: restauranteId
+          name: restaurantId
           schema: { type: integer, format: int64 }
         - in: query
           name: page
@@ -63,7 +63,20 @@ paths:
           name: size
           schema: { type: integer, default: 10 }
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPageResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
   /api/v1/pedidos/{id}/asignar:
     put:
       tags: [Orders]
@@ -165,5 +178,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrderItemResponse'
+    OrderPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/OrderResponse' }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
 
 

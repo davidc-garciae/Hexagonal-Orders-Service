@@ -1,5 +1,6 @@
 package com.pragma.powerup.domain.model;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +10,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderItem {
-  private Long dishId;
-  private Integer quantity;
+public class PagedResult<T> {
+  private List<T> content;
+  private int page;
+  private int size;
+  private long totalElements;
+  private int totalPages;
 }

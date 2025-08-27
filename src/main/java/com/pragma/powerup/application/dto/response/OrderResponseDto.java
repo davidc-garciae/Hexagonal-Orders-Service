@@ -8,17 +8,17 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OrderResponseDto {
-    private Long id;
-    private Long customerId;
-    private Long restaurantId;
-    private String status;
-    private LocalDateTime createdAt;
-    private List<OrderItemResponseDto> items;
+  private Long id;
+  private Long customerId;
+  private Long restaurantId;
+  private String status;
+  private LocalDateTime createdAt;
+  private List<OrderItemResponseDto> items;
 
-    @Getter
-    @Setter
-    public static class OrderItemResponseDto {
-        private Long dishId;
-        private Integer quantity;
-    }
+  @Getter
+  @Setter
+  public static class OrderItemResponseDto {
+    private Long dishId;
+    private Integer quantity;
+  }
 }

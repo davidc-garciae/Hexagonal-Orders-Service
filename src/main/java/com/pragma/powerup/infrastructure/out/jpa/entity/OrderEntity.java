@@ -25,30 +25,30 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false)
-    private Long customerId;
+  @Column(nullable = false)
+  private Long customerId;
 
-    @Column(nullable = false)
-    private Long restaurantId;
+  @Column(nullable = false)
+  private Long restaurantId;
 
-    private Long employeeId;
+  private Long employeeId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private com.pragma.powerup.domain.model.OrderStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private com.pragma.powerup.domain.model.OrderStatus status;
 
-    @Column(length = 6)
-    private String pin;
+  @Column(length = 6)
+  private String pin;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+  @Column(nullable = false)
+  private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+  private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItemEntity> items = new ArrayList<>();
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<OrderItemEntity> items = new ArrayList<>();
 }

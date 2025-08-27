@@ -35,8 +35,8 @@
 
 ### **HU-001: Crear Propietario**
 
-**Como:** Administrador  
-**Quiero:** Crear cuenta para un propietario  
+**Como:** Administrador
+**Quiero:** Crear cuenta para un propietario
 **Para:** Poder crear un restaurante a cargo de un propietario
 
 **Criterios de Aceptación:**
@@ -50,15 +50,15 @@
 3. **Resultado:** Usuario queda con rol PROPIETARIO
 4. **Seguridad:** Clave encriptada con BCrypt
 
-**Microservicio:** usuarios-service  
+**Microservicio:** usuarios-service
 **Endpoint:** `POST /api/v1/usuarios/propietario`
 
 ---
 
 ### **HU-002: Crear Restaurante**
 
-**Como:** Administrador  
-**Quiero:** Crear restaurantes en el sistema  
+**Como:** Administrador
+**Quiero:** Crear restaurantes en el sistema
 **Para:** Brindar al cliente posibilidad de escoger dónde pedir
 
 **Criterios de Aceptación:**
@@ -70,15 +70,15 @@
     - Telefono máximo 13 caracteres, puede contener + (ej: +573005698325)
     - Nombre puede contener números, pero no solo números
 
-**Microservicio:** plazoleta-service  
+**Microservicio:** plazoleta-service
 **Endpoint:** `POST /api/v1/restaurantes`
 
 ---
 
 ### **HU-003: Crear Plato**
 
-**Como:** Propietario  
-**Quiero:** Crear platos para mi restaurante  
+**Como:** Propietario
+**Quiero:** Crear platos para mi restaurante
 **Para:** Brindar diferentes opciones al cliente
 
 **Criterios de Aceptación:**
@@ -90,15 +90,15 @@
     - Plato debe estar asociado a un restaurante
 4. **Estado inicial:** activo = true por defecto
 
-**Microservicio:** plazoleta-service  
+**Microservicio:** plazoleta-service
 **Endpoint:** `POST /api/v1/platos`
 
 ---
 
 ### **HU-004: Modificar Plato**
 
-**Como:** Propietario  
-**Quiero:** Actualizar información de platos  
+**Como:** Propietario
+**Quiero:** Actualizar información de platos
 **Para:** Corregir valores o actualizar precios
 
 **Criterios de Aceptación:**
@@ -106,15 +106,15 @@
 1. **Campos modificables:** Solo precio y descripción
 2. **Autorización:** Solo propietario del restaurante del plato
 
-**Microservicio:** plazoleta-service  
+**Microservicio:** plazoleta-service
 **Endpoint:** `PUT /api/v1/platos/{id}`
 
 ---
 
 ### **HU-005: Agregar Autenticación**
 
-**Como:** Administrador/Cliente/Propietario/Empleado  
-**Quiero:** Autenticación en el sistema  
+**Como:** Administrador/Cliente/Propietario/Empleado
+**Quiero:** Autenticación en el sistema
 **Para:** Acceder a funcionalidades según mi rol
 
 **Criterios de Aceptación:**
@@ -130,15 +130,15 @@
     - Crear/modificar plato → Solo PROPIETARIO del restaurante
 6. **Nota:** No contempla recuperación de contraseña
 
-**Microservicio:** usuarios-service + API Gateway  
+**Microservicio:** usuarios-service + API Gateway
 **Endpoint:** `POST /api/v1/auth/login`
 
 ---
 
 ### **HU-006: Crear Cuenta Empleado**
 
-**Como:** Propietario  
-**Quiero:** Crear cuentas para empleados  
+**Como:** Propietario
+**Quiero:** Crear cuentas para empleados
 **Para:** Que administren los pedidos de mi restaurante
 
 **Criterios de Aceptación:**
@@ -148,15 +148,15 @@
 3. **Resultado:** Usuario queda con rol EMPLEADO
 4. **Seguridad:** Clave encriptada con BCrypt
 
-**Microservicio:** usuarios-service  
+**Microservicio:** usuarios-service
 **Endpoint:** `POST /api/v1/usuarios/empleado`
 
 ---
 
 ### **HU-007: Habilitar/Deshabilitar Plato**
 
-**Como:** Propietario  
-**Quiero:** Activar/desactivar platos  
+**Como:** Propietario
+**Quiero:** Activar/desactivar platos
 **Para:** Dejar de ofrecer productos en el menú
 
 **Criterios de Aceptación:**
@@ -164,15 +164,15 @@
 1. **Autorización:** Solo propietario puede habilitar/deshabilitar platos
 2. **Restricción:** No modificar platos de otros restaurantes
 
-**Microservicio:** plazoleta-service  
+**Microservicio:** plazoleta-service
 **Endpoint:** `PATCH /api/v1/platos/{id}/estado`
 
 ---
 
 ### **HU-008: Crear Cuenta Cliente**
 
-**Como:** Cliente  
-**Quiero:** Crear mi cuenta  
+**Como:** Cliente
+**Quiero:** Crear mi cuenta
 **Para:** Acceder al sistema y realizar pedidos
 
 **Criterios de Aceptación:**
@@ -181,15 +181,15 @@
 2. **Resultado:** Usuario queda con rol CLIENTE
 3. **Seguridad:** Clave encriptada con BCrypt
 
-**Microservicio:** usuarios-service  
+**Microservicio:** usuarios-service
 **Endpoint:** `POST /api/v1/usuarios/cliente`
 
 ---
 
 ### **HU-009: Listar Restaurantes**
 
-**Como:** Cliente  
-**Quiero:** Ver restaurantes disponibles  
+**Como:** Cliente
+**Quiero:** Ver restaurantes disponibles
 **Para:** Elegir dónde ordenar
 
 **Criterios de Aceptación:**
@@ -198,15 +198,15 @@
 2. **Paginación:** Especificar elementos por página
 3. **Campos devueltos:** Nombre, UrlLogo
 
-**Microservicio:** plazoleta-service  
+**Microservicio:** plazoleta-service
 **Endpoint:** `GET /api/v1/restaurantes?page=0&size=10`
 
 ---
 
 ### **HU-010: Listar Platos por Restaurante**
 
-**Como:** Cliente  
-**Quiero:** Ver menú del restaurante  
+**Como:** Cliente
+**Quiero:** Ver menú del restaurante
 **Para:** Solicitar plato de mi preferencia
 
 **Criterios de Aceptación:**
@@ -215,15 +215,15 @@
 2. **Filtro:** Por categoría
 3. **Mostrar:** Solo platos activos
 
-**Microservicio:** plazoleta-service  
+**Microservicio:** plazoleta-service
 **Endpoint:** `GET /api/v1/platos/restaurante/{id}?categoria=PRINCIPAL&page=0&size=10`
 
 ---
 
 ### **HU-011: Realizar Pedido**
 
-**Como:** Cliente  
-**Quiero:** Solicitar platos  
+**Como:** Cliente
+**Quiero:** Solicitar platos
 **Para:** Que los preparen
 
 **Criterios de Aceptación:**
@@ -233,15 +233,15 @@
 3. **Estado inicial:** PENDIENTE
 4. **Restricción:** Cliente solo puede tener un pedido activo (PENDIENTE, EN_PREPARACION, LISTO)
 
-**Microservicio:** pedidos-service  
+**Microservicio:** pedidos-service
 **Endpoint:** `POST /api/v1/pedidos`
 
 ---
 
 ### **HU-012: Lista de Pedidos por Estado**
 
-**Como:** Empleado  
-**Quiero:** Ver pedidos filtrados por estado  
+**Como:** Empleado
+**Quiero:** Ver pedidos filtrados por estado
 **Para:** Seleccionar pedido a gestionar
 
 **Criterios de Aceptación:**
@@ -251,15 +251,15 @@
 3. **Datos:** Todos los campos del pedido
 4. **Restricción:** Solo pedidos del restaurante del empleado
 
-**Microservicio:** pedidos-service  
+**Microservicio:** pedidos-service
 **Endpoint:** `GET /api/v1/pedidos?estado=PENDIENTE&restauranteId={id}&page=0&size=10`
 
 ---
 
 ### **HU-013: Asignarse a Pedido**
 
-**Como:** Empleado  
-**Quiero:** Asignarme a pedido y cambiar estado  
+**Como:** Empleado
+**Quiero:** Asignarme a pedido y cambiar estado
 **Para:** Informar avance al cliente
 
 **Criterios de Aceptación:**
@@ -269,15 +269,15 @@
 3. **Restricción:** Solo pedidos del restaurante del empleado
 4. **Listado:** Paginado con filtro por estado
 
-**Microservicio:** pedidos-service  
+**Microservicio:** pedidos-service
 **Endpoint:** `PUT /api/v1/pedidos/{id}/asignar`
 
 ---
 
 ### **HU-014: Notificar Pedido Listo**
 
-**Como:** Empleado  
-**Quiero:** Notificar que pedido está listo  
+**Como:** Empleado
+**Quiero:** Notificar que pedido está listo
 **Para:** Cliente sepa cuándo recoger
 
 **Criterios de Aceptación:**
@@ -287,15 +287,15 @@
 3. **Contenido SMS:** Pedido listo + PIN de seguridad para reclamar
 4. **PIN:** Generado automáticamente y único por pedido
 
-**Microservicio:** pedidos-service + mensajeria-service  
+**Microservicio:** pedidos-service + mensajeria-service
 **Endpoint:** `PUT /api/v1/pedidos/{id}/listo`
 
 ---
 
 ### **HU-015: Entregar Pedido**
 
-**Como:** Empleado  
-**Quiero:** Marcar pedido como entregado  
+**Como:** Empleado
+**Quiero:** Marcar pedido como entregado
 **Para:** Cerrar ciclo y concentrarme en otros
 
 **Criterios de Aceptación:**
@@ -305,15 +305,15 @@
 3. **Validación:** Empleado debe ingresar PIN correcto del cliente
 4. **Autorización:** Solo empleado del restaurante
 
-**Microservicio:** pedidos-service  
+**Microservicio:** pedidos-service
 **Endpoint:** `PUT /api/v1/pedidos/{id}/entregar`
 
 ---
 
 ### **HU-016: Cancelar Pedido**
 
-**Como:** Cliente  
-**Quiero:** Cancelar mi pedido  
+**Como:** Cliente
+**Quiero:** Cancelar mi pedido
 **Para:** Retractarme por cualquier motivo
 
 **Criterios de Aceptación:**
@@ -322,15 +322,15 @@
 2. **Mensaje de error:** "Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"
 3. **Autorización:** Solo el cliente propietario del pedido
 
-**Microservicio:** pedidos-service  
+**Microservicio:** pedidos-service
 **Endpoint:** `PUT /api/v1/pedidos/{id}/cancelar`
 
 ---
 
 ### **HU-017: Consultar Trazabilidad**
 
-**Como:** Cliente  
-**Quiero:** Ver cambios de estado de mi pedido  
+**Como:** Cliente
+**Quiero:** Ver cambios de estado de mi pedido
 **Para:** Conocer rapidez del servicio
 
 **Criterios de Aceptación:**
@@ -339,15 +339,15 @@
 2. **Autorización:** Cliente solo ve trazabilidad de sus pedidos
 3. **Información:** Estado anterior, estado nuevo, fecha/hora, empleado (si aplica)
 
-**Microservicio:** trazabilidad-service  
+**Microservicio:** trazabilidad-service
 **Endpoint:** `GET /api/v1/trazabilidad/pedido/{id}`
 
 ---
 
 ### **HU-018: Consultar Eficiencia**
 
-**Como:** Propietario  
-**Quiero:** Ver eficiencia de pedidos  
+**Como:** Propietario
+**Quiero:** Ver eficiencia de pedidos
 **Para:** Dar mejor experiencia a clientes
 
 **Criterios de Aceptación:**
@@ -360,7 +360,7 @@
     - Comparativa entre empleados
 4. **Autorización:** Solo propietario del restaurante
 
-**Microservicio:** trazabilidad-service  
+**Microservicio:** trazabilidad-service
 **Endpoint:** `GET /api/v1/trazabilidad/eficiencia/restaurante/{id}`
 
 ---

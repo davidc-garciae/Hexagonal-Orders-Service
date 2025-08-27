@@ -1,0 +1,38 @@
+graph TB
+    %% HU-012: List Orders by Status (High contrast)
+    subgraph "Input Adapters"
+        REST["🌐 REST Controller\nOrderRestController (GET)"]
+    end
+
+    subgraph "Application Layer"
+        QH["📋 Query Handler\nOrderQueryHandler"]
+        PAGE_DTO["📥 OrderPageResponseDto"]
+        PAGE_MAP["🔄 IOrderPageResponseMapper"]
+    end
+
+    subgraph "Domain Core"
+        USECASE["⚙️ ListOrdersByStatusUseCase"]
+        API["🔌 IOrderServicePort (IN)"]
+        SPI["🔌 IOrderPersistencePort (OUT)"]
+        MODEL["📊 Order, OrderStatus, PagedResult"]
+    end
+
+    subgraph "Driven Adapters"
+        JPA_ADAPTER["💾 OrderJpaAdapter"]
+        REPO["🏪 OrderRepository.findByRestaurantIdAndStatus(..)"]
+    end
+
+    REST --> QH
+    QH --> API
+    API --> USECASE
+    USECASE --> SPI
+    SPI --> JPA_ADAPTER
+    JPA_ADAPTER --> REPO
+
+    classDef domain fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#000000
+    classDef app fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000000
+    classDef infra fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000000
+
+    class USECASE,API,SPI,MODEL domain
+    class QH,PAGE_DTO,PAGE_MAP app
+    class REST,JPA_ADAPTER,REPO infra

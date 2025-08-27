@@ -109,17 +109,17 @@ graph TB
 
 **PostgreSQL es perfecto para este proyecto porque:**
 
-✅ **Datos altamente relacionales**: Usuarios → Restaurantes → Platos → Pedidos → Detalles  
-✅ **Transacciones ACID necesarias**: Los pedidos requieren consistencia absoluta  
-✅ **Consultas complejas**: Reportes, métricas, joins entre múltiples entidades  
-✅ **Integridad referencial**: Claves foráneas y constraints son esenciales  
-✅ **Excelente rendimiento**: PostgreSQL maneja millones de registros sin problemas  
+✅ **Datos altamente relacionales**: Usuarios → Restaurantes → Platos → Pedidos → Detalles
+✅ **Transacciones ACID necesarias**: Los pedidos requieren consistencia absoluta
+✅ **Consultas complejas**: Reportes, métricas, joins entre múltiples entidades
+✅ **Integridad referencial**: Claves foráneas y constraints son esenciales
+✅ **Excelente rendimiento**: PostgreSQL maneja millones de registros sin problemas
 ✅ **Extensiones avanzadas**: Full-text search, JSON, funciones de ventana
 
 **NoSQL sería innecesario porque:**
-❌ No hay documentos sin estructura fija  
-❌ No necesitamos escalabilidad masiva (millones de usuarios concurrentes)  
-❌ No tenemos datos no relacionales  
+❌ No hay documentos sin estructura fija
+❌ No necesitamos escalabilidad masiva (millones de usuarios concurrentes)
+❌ No tenemos datos no relacionales
 ❌ Añadiría complejidad sin beneficios
 
 ### Modelos de Datos Principales

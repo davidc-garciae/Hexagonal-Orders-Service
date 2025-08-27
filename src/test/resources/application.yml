@@ -22,4 +22,3 @@ springdoc:
 # Placeholders requeridos por OpenApiConfiguration en pruebas
 appdescription: "API PowerUp (tests)"
 appversion: "0.0.0-test"
-

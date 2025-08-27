@@ -1,10 +1,15 @@
 package com.pragma.powerup.infrastructure.input.rest;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pragma.powerup.application.dto.request.OrderCreateRequestDto;
 import com.pragma.powerup.application.dto.request.OrderCreateRequestDto.OrderItemRequestDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
 import com.pragma.powerup.application.handler.IOrderHandler;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -12,14 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(OrderRestController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -31,6 +30,8 @@ class OrderRestControllerWebMvcTest {
     private ObjectMapper objectMapper;
     @Autowired
     private IOrderHandler orderHandler;
+    @Autowired
+    private com.pragma.powerup.application.handler.IOrderQueryHandler orderQueryHandler;
 
     @org.springframework.boot.test.context.TestConfiguration
     static class TestConfig {
@@ -38,10 +39,15 @@ class OrderRestControllerWebMvcTest {
         IOrderHandler orderHandler() {
             return Mockito.mock(IOrderHandler.class);
         }
+
+        @Bean
+        com.pragma.powerup.application.handler.IOrderQueryHandler orderQueryHandler() {
+            return Mockito.mock(com.pragma.powerup.application.handler.IOrderQueryHandler.class);
+        }
     }
 
     @Test
-    @DisplayName("POST /api/v1/pedidos returns 201 when valid and user matches header")
+    @DisplayName("POST /api/v1/orders returns 201 when valid and user matches header")
     void createOrder_created() throws Exception {
         OrderCreateRequestDto req = new OrderCreateRequestDto();
         req.setCustomerId(5L);
@@ -55,17 +61,19 @@ class OrderRestControllerWebMvcTest {
         resp.setId(1L);
         Mockito.when(orderHandler.createOrder(Mockito.any())).thenReturn(resp);
 
-        mockMvc.perform(post("/api/v1/pedidos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("X-User-Id", "5")
-                .header("X-User-Email", "c@a.com")
-                .header("X-User-Role", "CUSTOMER")
-                .content(objectMapper.writeValueAsString(req)))
+        mockMvc
+                .perform(
+                        post("/api/v1/orders")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("X-User-Id", "5")
+                                .header("X-User-Email", "c@a.com")
+                                .header("X-User-Role", "CUSTOMER")
+                                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated());
     }
 
     @Test
-    @DisplayName("POST /api/v1/pedidos returns 403 when header user differs from body")
+    @DisplayName("POST /api/v1/orders returns 403 when header user differs from body")
     void createOrder_forbiddenWhenUserMismatch() throws Exception {
         OrderCreateRequestDto req = new OrderCreateRequestDto();
         req.setCustomerId(6L);
@@ -75,12 +83,40 @@ class OrderRestControllerWebMvcTest {
         item.setQuantity(2);
         req.setItems(List.of(item));
 
-        mockMvc.perform(post("/api/v1/pedidos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("X-User-Id", "5")
-                .header("X-User-Email", "c@a.com")
-                .header("X-User-Role", "CUSTOMER")
-                .content(objectMapper.writeValueAsString(req)))
+        mockMvc
+                .perform(
+                        post("/api/v1/orders")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("X-User-Id", "5")
+                                .header("X-User-Email", "c@a.com")
+                                .header("X-User-Role", "CUSTOMER")
+                                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/orders returns 200 with paging")
+    void listOrders_ok() throws Exception {
+        com.pragma.powerup.application.dto.response.OrderPageResponseDto page = new com.pragma.powerup.application.dto.response.OrderPageResponseDto();
+        page.setPage(0);
+        page.setSize(10);
+        page.setTotalElements(0);
+        page.setTotalPages(0);
+        Mockito.when(
+                orderQueryHandler.listByStatusAndRestaurant(
+                        Mockito.anyLong(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt()))
+                .thenReturn(page);
+
+        mockMvc
+                .perform(
+                        get("/api/v1/orders")
+                                .param("status", "PENDIENTE")
+                                .param("restaurantId", "10")
+                                .param("page", "0")
+                                .param("size", "10")
+                                .header("X-User-Id", "5")
+                                .header("X-User-Email", "e@x.com")
+                                .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isOk());
     }
 }
