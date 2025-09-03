@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
+// @Disabled("Configuration issues with placeholders - requires environment
+// setup")
 class PowerUpApplicationTests {
 
   @Test

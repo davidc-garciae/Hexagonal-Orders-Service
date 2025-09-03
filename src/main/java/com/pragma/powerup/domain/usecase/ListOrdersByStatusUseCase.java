@@ -1,23 +1,18 @@
 package com.pragma.powerup.domain.usecase;
 
-import com.pragma.powerup.domain.api.IOrderServicePort;
+import com.pragma.powerup.domain.api.IListOrdersServicePort;
 import com.pragma.powerup.domain.exception.DomainException;
 import com.pragma.powerup.domain.model.Order;
 import com.pragma.powerup.domain.model.OrderStatus;
 import com.pragma.powerup.domain.model.PagedResult;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 
-public class ListOrdersByStatusUseCase implements IOrderServicePort {
+public class ListOrdersByStatusUseCase implements IListOrdersServicePort {
 
   private final IOrderPersistencePort orderPersistencePort;
 
   public ListOrdersByStatusUseCase(IOrderPersistencePort orderPersistencePort) {
     this.orderPersistencePort = orderPersistencePort;
-  }
-
-  @Override
-  public Order createOrder(Order order) {
-    throw new UnsupportedOperationException("Not supported in this use case");
   }
 
   @Override
@@ -30,7 +25,15 @@ public class ListOrdersByStatusUseCase implements IOrderServicePort {
   }
 
   @Override
-  public Order assignOrder(Long orderId, Long employeeId) {
-    throw new UnsupportedOperationException("Not supported in this use case");
+  public PagedResult<Order> listByCustomer(
+      Long customerId, OrderStatus status, int page, int size) {
+    if (customerId == null) throw new DomainException("customerId is required");
+    if (page < 0 || size <= 0) throw new DomainException("invalid pagination parameters");
+
+    if (status != null) {
+      return orderPersistencePort.findByCustomerAndStatus(customerId, status, page, size);
+    } else {
+      return orderPersistencePort.findByCustomer(customerId, page, size);
+    }
   }
 }

@@ -1,0 +1,10 @@
+{
+  "customerId": 34,
+  "restaurantId": 3,
+  "items": [
+    {
+      "dishId": 19,
+      "quantity": 1
+    }
+  ]
+}

@@ -1,51 +1,263 @@
 package com.pragma.powerup.domain.usecase;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
-
 import com.pragma.powerup.domain.exception.DomainException;
 import com.pragma.powerup.domain.model.Order;
-import com.pragma.powerup.domain.model.OrderStatus;
 import com.pragma.powerup.domain.model.PagedResult;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.Collections;
+
+import static com.pragma.powerup.testdata.TestDataFactory.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("ListOrdersByStatusUseCase Domain Tests")
 class ListOrdersByStatusUseCaseTest {
 
-  private IOrderPersistencePort persistence;
-  private ListOrdersByStatusUseCase useCase;
+  @Mock
+  private IOrderPersistencePort orderPersistencePort;
+
+  private ListOrdersByStatusUseCase listOrdersByStatusUseCase;
 
   @BeforeEach
-  void setup() {
-    persistence = Mockito.mock(IOrderPersistencePort.class);
-    useCase = new ListOrdersByStatusUseCase(persistence);
+  void setUp() {
+    listOrdersByStatusUseCase = new ListOrdersByStatusUseCase(orderPersistencePort);
   }
 
   @Test
-  @DisplayName("Should return paged orders when parameters are valid")
-  void ok() {
-    PagedResult<Order> page = new PagedResult<>(List.of(new Order()), 0, 10, 1, 1);
-    when(persistence.findByRestaurantAndStatus(1L, OrderStatus.PENDIENTE, 0, 10)).thenReturn(page);
+  @DisplayName("Should list orders by restaurant and status successfully")
+  void listByStatusAndRestaurant_WithValidParameters_ShouldReturnPagedOrders() {
+    // Given
+    Order pendingOrder1 = orderWithStatus(STATUS_PENDING);
+    Order pendingOrder2 = orderWithStatus(STATUS_PENDING);
+    PagedResult<Order> expectedResult = new PagedResult<>(
+        Arrays.asList(pendingOrder1, pendingOrder2),
+        0, 10, 2, 1);
 
-    var result = useCase.listByStatusAndRestaurant(1L, OrderStatus.PENDIENTE, 0, 10);
+    when(orderPersistencePort.findByRestaurantAndStatus(RESTAURANT_ID, STATUS_PENDING, 0, 10))
+        .thenReturn(expectedResult);
+
+    // When
+    PagedResult<Order> result = listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_PENDING, 0, 10);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getContent()).hasSize(2);
+    assertThat(result.getPage()).isZero();
+    assertThat(result.getSize()).isEqualTo(10);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+    assertThat(result.getTotalPages()).isEqualTo(1);
+
+    verify(orderPersistencePort).findByRestaurantAndStatus(RESTAURANT_ID, STATUS_PENDING, 0, 10);
+  }
+
+  @Test
+  @DisplayName("Should return empty page when no orders found")
+  void listByStatusAndRestaurant_WithNoOrdersFound_ShouldReturnEmptyPage() {
+    // Given
+    PagedResult<Order> emptyResult = new PagedResult<>(
+        Collections.emptyList(),
+        0, 10, 0, 0);
+
+    when(orderPersistencePort.findByRestaurantAndStatus(RESTAURANT_ID, STATUS_IN_PREPARATION, 0, 10))
+        .thenReturn(emptyResult);
+
+    // When
+    PagedResult<Order> result = listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_IN_PREPARATION, 0, 10);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getContent()).isEmpty();
+    assertThat(result.getTotalElements()).isZero();
+
+    verify(orderPersistencePort).findByRestaurantAndStatus(RESTAURANT_ID, STATUS_IN_PREPARATION, 0, 10);
+  }
+
+  @Test
+  @DisplayName("Should throw exception when restaurant ID is null")
+  void listByStatusAndRestaurant_WithNullRestaurantId_ShouldThrowException() {
+    // When & Then
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        null, STATUS_PENDING, 0, 10))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("restaurantId is required");
+
+    verifyNoInteractions(orderPersistencePort);
+  }
+
+  @Test
+  @DisplayName("Should throw exception when status is null")
+  void listByStatusAndRestaurant_WithNullStatus_ShouldThrowException() {
+    // When & Then
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, null, 0, 10))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("status is required");
+
+    verifyNoInteractions(orderPersistencePort);
+  }
+
+  @Test
+  @DisplayName("Should throw exception when page is negative")
+  void listByStatusAndRestaurant_WithNegativePage_ShouldThrowException() {
+    // When & Then
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_PENDING, -1, 10))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("invalid pagination parameters");
+
+    verifyNoInteractions(orderPersistencePort);
+  }
+
+  @Test
+  @DisplayName("Should throw exception when size is zero or negative")
+  void listByStatusAndRestaurant_WithInvalidSize_ShouldThrowException() {
+    // When & Then
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_PENDING, 0, 0))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("invalid pagination parameters");
+
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_PENDING, 0, -5))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("invalid pagination parameters");
+
+    verifyNoInteractions(orderPersistencePort);
+  }
+
+  @Test
+  @DisplayName("Should list orders by customer with status successfully")
+  void listByCustomer_WithStatus_ShouldReturnPagedOrders() {
+    // Given
+    Order customerOrder1 = orderWithStatus(STATUS_READY);
+    Order customerOrder2 = orderWithStatus(STATUS_READY);
+    PagedResult<Order> expectedResult = new PagedResult<>(
+        Arrays.asList(customerOrder1, customerOrder2),
+        0, 10, 2, 1);
+
+    when(orderPersistencePort.findByCustomerAndStatus(CUSTOMER_ID, STATUS_READY, 0, 10))
+        .thenReturn(expectedResult);
+
+    // When
+    PagedResult<Order> result = listOrdersByStatusUseCase.listByCustomer(
+        CUSTOMER_ID, STATUS_READY, 0, 10);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getContent()).hasSize(2);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+
+    verify(orderPersistencePort).findByCustomerAndStatus(CUSTOMER_ID, STATUS_READY, 0, 10);
+  }
+
+  @Test
+  @DisplayName("Should list all orders by customer when status is null")
+  void listByCustomer_WithoutStatus_ShouldReturnAllCustomerOrders() {
+    // Given
+    Order customerOrder1 = orderWithStatus(STATUS_PENDING);
+    Order customerOrder2 = orderWithStatus(STATUS_DELIVERED);
+    PagedResult<Order> expectedResult = new PagedResult<>(
+        Arrays.asList(customerOrder1, customerOrder2),
+        0, 10, 2, 1);
+
+    when(orderPersistencePort.findByCustomer(CUSTOMER_ID, 0, 10))
+        .thenReturn(expectedResult);
+
+    // When
+    PagedResult<Order> result = listOrdersByStatusUseCase.listByCustomer(
+        CUSTOMER_ID, null, 0, 10);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getContent()).hasSize(2);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+
+    verify(orderPersistencePort).findByCustomer(CUSTOMER_ID, 0, 10);
+    verify(orderPersistencePort, never()).findByCustomerAndStatus(any(), any(), anyInt(), anyInt());
+  }
+
+  @Test
+  @DisplayName("Should throw exception when customer ID is null")
+  void listByCustomer_WithNullCustomerId_ShouldThrowException() {
+    // When & Then
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByCustomer(
+        null, STATUS_PENDING, 0, 10))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("customerId is required");
+
+    verifyNoInteractions(orderPersistencePort);
+  }
+
+  @Test
+  @DisplayName("Should throw exception when pagination parameters are invalid for customer listing")
+  void listByCustomer_WithInvalidPagination_ShouldThrowException() {
+    // When & Then
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByCustomer(
+        CUSTOMER_ID, STATUS_PENDING, -1, 10))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("invalid pagination parameters");
+
+    assertThatThrownBy(() -> listOrdersByStatusUseCase.listByCustomer(
+        CUSTOMER_ID, STATUS_PENDING, 0, 0))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("invalid pagination parameters");
+
+    verifyNoInteractions(orderPersistencePort);
+  }
+
+  @Test
+  @DisplayName("Should handle large page sizes correctly")
+  void listByStatusAndRestaurant_WithLargePageSize_ShouldHandleCorrectly() {
+    // Given
+    PagedResult<Order> expectedResult = new PagedResult<>(
+        Collections.emptyList(),
+        0, 100, 0, 0);
+
+    when(orderPersistencePort.findByRestaurantAndStatus(RESTAURANT_ID, STATUS_CANCELLED, 0, 100))
+        .thenReturn(expectedResult);
+
+    // When
+    PagedResult<Order> result = listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_CANCELLED, 0, 100);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getSize()).isEqualTo(100);
+
+    verify(orderPersistencePort).findByRestaurantAndStatus(RESTAURANT_ID, STATUS_CANCELLED, 0, 100);
+  }
+
+  @Test
+  @DisplayName("Should handle different order statuses correctly")
+  void listByStatusAndRestaurant_WithDifferentStatuses_ShouldHandleCorrectly() {
+    // Given
+    PagedResult<Order> deliveredResult = new PagedResult<>(
+        Collections.singletonList(orderWithStatus(STATUS_DELIVERED)),
+        0, 10, 1, 1);
+
+    when(orderPersistencePort.findByRestaurantAndStatus(RESTAURANT_ID, STATUS_DELIVERED, 0, 10))
+        .thenReturn(deliveredResult);
+
+    // When
+    PagedResult<Order> result = listOrdersByStatusUseCase.listByStatusAndRestaurant(
+        RESTAURANT_ID, STATUS_DELIVERED, 0, 10);
+
+    // Then
+    assertThat(result).isNotNull();
     assertThat(result.getContent()).hasSize(1);
-  }
+    assertThat(result.getContent().get(0).getStatus()).isEqualTo(STATUS_DELIVERED);
 
-  @Test
-  @DisplayName("Should validate inputs")
-  void validate() {
-    assertThatThrownBy(() -> useCase.listByStatusAndRestaurant(null, OrderStatus.PENDIENTE, 0, 10))
-        .isInstanceOf(DomainException.class);
-    assertThatThrownBy(() -> useCase.listByStatusAndRestaurant(1L, null, 0, 10))
-        .isInstanceOf(DomainException.class);
-    assertThatThrownBy(() -> useCase.listByStatusAndRestaurant(1L, OrderStatus.PENDIENTE, -1, 10))
-        .isInstanceOf(DomainException.class);
-    assertThatThrownBy(() -> useCase.listByStatusAndRestaurant(1L, OrderStatus.PENDIENTE, 0, 0))
-        .isInstanceOf(DomainException.class);
+    verify(orderPersistencePort).findByRestaurantAndStatus(RESTAURANT_ID, STATUS_DELIVERED, 0, 10);
   }
 }

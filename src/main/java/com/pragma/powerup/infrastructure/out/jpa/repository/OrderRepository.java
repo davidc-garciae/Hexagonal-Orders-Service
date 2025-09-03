@@ -12,4 +12,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
   Page<OrderEntity> findByRestaurantIdAndStatus(
       Long restaurantId, OrderStatus status, Pageable pageable);
+
+  Page<OrderEntity> findByCustomerId(Long customerId, Pageable pageable);
+
+  Page<OrderEntity> findByCustomerIdAndStatus(
+      Long customerId, OrderStatus status, Pageable pageable);
 }

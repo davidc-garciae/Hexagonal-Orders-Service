@@ -1,16 +1,39 @@
 spring:
+  # Database configuration (PostgreSQL for integration tests, H2 for unit tests)
   datasource:
-    url: jdbc:h2:mem:powerup;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
+    url: ${DB_TEST_URL:jdbc:h2:mem:powerup;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    driver-class-name: ${DB_TEST_DRIVER:org.h2.Driver}
+    username: ${DB_TEST_USERNAME:sa}
+    password: ${DB_TEST_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: false
+      ddl-auto: ${DDL_AUTO:create-drop}
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+  # Application configuration
+  application:
+    name: ${SPRING_APPLICATION_NAME:orders-service-test}
+    version: ${APP_VERSION:0.0.0-test}
+  # MongoDB configuration for traceability (disabled for unit tests)
+  data:
+    mongodb:
+      uri: ${MONGODB_TEST_URI:mongodb://localhost:27017/powerup-traceability-test}
+      database: ${MONGODB_TEST_DATABASE:powerup-traceability-test}
+  # MongoDB autoconfiguration disabled for tests (using H2 only)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+  # Deshabilitar verificación de compatibilidad Spring Cloud/Boot
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+# Server configuration
+server:
+  port: ${PORT:0}
 
 # Desactivar Swagger en pruebas para agilizar el contexto
 springdoc:
@@ -22,3 +45,34 @@ springdoc:
 # Placeholders requeridos por OpenApiConfiguration en pruebas
 appdescription: "API PowerUp (tests)"
 appversion: "0.0.0-test"
+
+# Configuración de Feign para tests (externalizada)
+feign:
+  clients:
+    users-service:
+      url: ${USERS_SERVICE_TEST_URL:http://localhost:8081}
+    messaging-service:
+      url: ${MESSAGING_SERVICE_TEST_URL:http://localhost:8084}
+  client:
+    config:
+      default:
+        connectTimeout: ${FEIGN_CONNECT_TIMEOUT:1000}
+        readTimeout: ${FEIGN_READ_TIMEOUT:3000}
+        loggerLevel: ${FEIGN_LOG_LEVEL:basic}
+
+# JWT para tests
+jwt:
+  secret: ${JWT_SECRET:test-secret-for-hexagonal-architecture-microservices}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# ===================================================================
+# CONFIGURACIÓN PARA TESTS DE INTEGRACIÓN CON POSTGRESQL
+# ===================================================================
+# Para usar PostgreSQL en lugar de H2, establece estas variables:
+# DB_TEST_URL=jdbc:postgresql://localhost:5432/powerup_orders_test
+# DB_TEST_DRIVER=org.postgresql.Driver
+# DB_TEST_USERNAME=postgres
+# DB_TEST_PASSWORD=postgres
+# HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+# DDL_AUTO=create-drop
+# ===================================================================

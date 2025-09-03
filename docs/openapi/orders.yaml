@@ -1,10 +1,38 @@
 openapi: 3.0.3
 info:
   title: orders-service API
+  description: |
+    Microservicio de gestión de pedidos con trazabilidad completa y métricas de eficiencia.
+
+    **Funcionalidades principales:**
+    - Gestión completa del ciclo de vida de pedidos
+    - Trazabilidad en tiempo real con MongoDB
+    - Métricas de eficiencia de restaurantes y empleados (HU-018)
+    - Control de acceso basado en roles (JWT)
+
+    **Arquitectura:**
+    - Hexagonal Architecture
+    - PostgreSQL para datos transaccionales
+    - MongoDB para eventos de trazabilidad
+    - Integración con Restaurant Service para validación de autorización
   version: 1.0.0
+  contact:
+    name: Orders Service Team
+    email: orders@pragma.com.co
+tags:
+  - name: Orders
+    description: Gestión de pedidos - creación, consulta, y cambios de estado
+  - name: Traceability
+    description: Trazabilidad de pedidos - eventos y histórico de cambios
+  - name: Metrics
+    description: Métricas de eficiencia de restaurantes y empleados (HU-018)
+  - name: Debug
+    description: Endpoints de debugging y testing de autenticación
 servers:
-  - url: http://localhost:8083
-    description: orders-service
+  - url: http://localhost:8082
+    description: orders-service local development
+  - url: https://orders-api.pragma.com.co
+    description: orders-service production
 security:
   - bearerAuth: []
 paths:
@@ -49,12 +77,26 @@ paths:
     get:
       tags: [Orders]
       summary: List orders by status and restaurant (EMPLOYEE/OWNER)
+      description: |
+        HU-012: Listar Pedidos (EMPLOYEE)
+        Lists orders with strict access control:
+        - EMPLOYEE: Can only see orders from their assigned restaurant
+        - OWNER: Can see orders from their owned restaurants
+        - System validates employee-restaurant assignment via Users Service
+
+        Security Implementation:
+        - Validates user role and restaurant assignment
+        - Returns HTTP 403 if trying to access unauthorized restaurant orders
+        - Supports filtering by status and pagination
       parameters:
         - in: query
           name: status
+          description: Filter orders by status
           schema: { type: string, enum: [PENDIENTE, EN_PREPARACION, LISTO, ENTREGADO, CANCELADO] }
         - in: query
           name: restaurantId
+          description: Restaurant ID to filter orders (validated against user permissions)
+          required: true
           schema: { type: integer, format: int64 }
         - in: query
           name: page
@@ -70,13 +112,123 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderPageResponse'
         '400':
-          description: Bad request
+          description: Bad request (missing or invalid parameters)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401': { description: Unauthorized }
-        '403': { description: Forbidden }
+        '401': { description: Unauthorized (missing or invalid token) }
+        '403':
+          description: Forbidden (user is not employee/owner of the specified restaurant)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/orders/my-orders:
+    get:
+      tags: [Orders]
+      summary: Get my orders (CUSTOMER only)
+      description: |
+        Retrieves all orders for the authenticated customer with optional status filtering.
+        Only customers can access this endpoint and only see their own orders.
+
+        **Access Control:**
+        - **CUSTOMER**: Can view only their own orders
+
+        **Features:**
+        - Optional status filtering
+        - Pagination support
+        - Sorted by creation date (newest first)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDIENTE, EN_PREPARACION, LISTO, ENTREGADO, CANCELADO]
+          description: Optional filter by order status
+          example: "PENDIENTE"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number (0-based)
+          example: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of orders per page
+          example: 10
+      responses:
+        '200':
+          description: OK - Customer orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPageResponse'
+              example:
+                content:
+                  - id: 25
+                    customerId: 4
+                    restaurantId: 1
+                    status: "ENTREGADO"
+                    createdAt: "2024-01-15T10:30:00"
+                    plates:
+                      - id: 1
+                        name: "Hamburguesa Clásica"
+                        quantity: 2
+                totalPages: 1
+                totalElements: 1
+                size: 10
+                number: 0
+        '400':
+          description: Bad request (invalid parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401': { description: Unauthorized (missing or invalid token) }
+        '403': { description: Forbidden (only customers can access this endpoint) }
+
+  /api/v1/orders/test-auth:
+    get:
+      tags: [Debug]
+      summary: Test JWT authentication (ALL AUTHENTICATED ROLES)
+      description: |
+        Debug endpoint to test JWT token validation and authentication details.
+        Useful for troubleshooting authentication issues during development.
+
+        **Access Control:**
+        - **ALL AUTHENTICATED ROLES**: Any user with a valid JWT token
+
+        **Response includes:**
+        - JWT validation status
+        - Extracted user information (ID, email, role)
+        - Spring Security context details
+        - Authentication authorities
+      responses:
+        '200':
+          description: OK - Authentication test completed
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                JWT validation successful! UserId=4, Email=customer4@test.com, Role=CUSTOMER
+                Principal: customer4@test.com
+                Authorities: [ROLE_CUSTOMER]
+                Auth details: AuthDetails(userId=4, email=customer4@test.com, role=CUSTOMER)
+        '401': { description: Unauthorized (missing or invalid token) }
+
   /api/v1/orders/{id}/ready:
     put:
       tags: [Orders]
@@ -169,12 +321,160 @@ paths:
         '403': { description: Forbidden }
         '404': { description: Not found }
 
+  /api/v1/orders/{id}/traceability:
+    get:
+      tags: [Traceability]
+      summary: Get order traceability events (ALL AUTHENTICATED ROLES)
+      description: |
+        Returns traceability events for a specific order with complete state change history.
+
+        **Authorization rules:**
+        - **CUSTOMER**: Can only view traceability of their own orders
+        - **EMPLOYEE**: Can view traceability of orders from their assigned restaurant
+        - **OWNER**: Can view traceability of orders from their restaurant
+        - **ADMIN**: Can view traceability of any order
+
+        **Response includes:**
+        - Complete state transition history (PENDIENTE → EN_PREPARACION → LISTO → ENTREGADO)
+        - Timestamps for each state change
+        - Employee information who performed each action (when applicable)
+        - MongoDB-based storage for scalable traceability
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: OK - Complete traceability history returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TraceabilityEventResponse'
+              example:
+                - id: "68b70c41c8b0271f40963e4b"
+                  orderId: 12
+                  eventType: null
+                  previousStatus: null
+                  newStatus: "PENDIENTE"
+                  timestamp: "2025-09-02T09:30:46.291"
+                  employeeId: null
+                  employeeName: null
+                - id: "68b70c5ec8b0271f40963e4c"
+                  orderId: 12
+                  eventType: null
+                  previousStatus: "PENDIENTE"
+                  newStatus: "EN_PREPARACION"
+                  timestamp: "2025-09-02T09:31:24.299"
+                  employeeId: 3
+                  employeeName: "employee"
+                - id: "68b70c76c8b0271f40963e4d"
+                  orderId: 12
+                  eventType: null
+                  previousStatus: "EN_PREPARACION"
+                  newStatus: "LISTO"
+                  timestamp: "2025-09-02T09:31:48.821"
+                  employeeId: 3
+                  employeeName: "employee"
+                - id: "68b70c8ec8b0271f40963e4e"
+                  orderId: 12
+                  eventType: null
+                  previousStatus: "LISTO"
+                  newStatus: "ENTREGADO"
+                  timestamp: "2025-09-02T09:32:14.542"
+                  employeeId: 3
+                  employeeName: "employee"
+        '401': { description: Unauthorized - Missing or invalid JWT token }
+        '403': { description: Forbidden - You are not authorized to view this order's traceability }
+        '404': { description: Order not found }
+
+  /api/v1/restaurants/{id}/metrics:
+    get:
+      tags: [Metrics]
+      summary: Get restaurant efficiency metrics (OWNER ONLY)
+      description: |
+        **HU-018: Consultar Eficiencia del Restaurante**
+
+        Retrieve comprehensive efficiency metrics for a restaurant including:
+        1. **Metric per order**: Total time from start to delivery
+        2. **Employee ranking**: Average time per employee with efficiency ranking
+        3. **Calculations**: Time per state, total order time, employee comparisons
+
+        **ACCESS CONTROL**: Only the restaurant owner can access this information.
+        Authorization verified through Restaurant Service integration.
+
+        **TIME FORMAT**: All time values returned in MM:SS format (minutes:seconds) for better readability.
+        Example: "2:30" means 2 minutes and 30 seconds.
+
+        **Features**:
+        - Restaurant-level metrics (total orders, average times)
+        - Employee efficiency ranking (1 = most efficient)
+        - Period-based filtering with date range
+        - Real-time calculations from MongoDB traceability data
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: startDate
+          required: false
+          schema: { type: string, format: date }
+          example: "2024-01-01"
+        - in: query
+          name: endDate
+          required: false
+          schema: { type: string, format: date }
+          example: "2024-01-31"
+      responses:
+        '200':
+          description: Metrics retrieved successfully - All time values in MM:SS format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantMetricsResponse'
+              example:
+                restaurantId: 1
+                restaurantName: "Restaurant 1"
+                totalOrdersProcessed: 7
+                averageOrderPreparationTime: "29:00"
+                averageOrderDeliveryTime: "1:52"
+                activeEmployees: 2
+                employeeRanking:
+                  - employeeId: 8
+                    employeeName: "Employee 8"
+                    ordersProcessed: 1
+                    averagePreparationTime: "1:19"
+                    averageDeliveryTime: "0:48"
+                    efficiencyRank: 1
+                  - employeeId: 3
+                    employeeName: "Employee 3"
+                    ordersProcessed: 5
+                    averagePreparationTime: "38:13"
+                    averageDeliveryTime: "2:24"
+                    efficiencyRank: 2
+        '401': { description: Unauthorized - Missing or invalid JWT token }
+        '403': { description: Forbidden - Only restaurant owner can view metrics }
+        '404': { description: Restaurant not found }
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: |
+        JWT token obtenido del servicio de autenticación.
+
+        **Formato:** `Authorization: Bearer <token>`
+
+        **Roles soportados:**
+        - `CUSTOMER`: Clientes del sistema
+        - `EMPLOYEE`: Empleados de restaurantes
+        - `OWNER`: Propietarios de restaurantes
+        - `ADMIN`: Administradores del sistema
   schemas:
     ErrorResponse:
       type: object
@@ -227,6 +527,140 @@ components:
         size: { type: integer }
         totalElements: { type: integer, format: int64 }
         totalPages: { type: integer }
+
+    TraceabilityEventResponse:
+      type: object
+      description: |
+        Represents a single traceability event in an order's lifecycle.
+        Each event captures a state transition with complete context information.
+      properties:
+        id:
+          type: string
+          description: Unique MongoDB ObjectId for the traceability event
+          example: "68b70c41c8b0271f40963e4b"
+        orderId:
+          type: integer
+          format: int64
+          description: ID of the order this event belongs to
+          example: 12
+        eventType:
+          type: string
+          enum: [ORDER_CREATED, STATUS_CHANGED]
+          nullable: true
+          description: Type of event (currently not used, reserved for future expansion)
+        previousStatus:
+          type: string
+          enum: [PENDIENTE, EN_PREPARACION, LISTO, ENTREGADO, CANCELADO]
+          nullable: true
+          description: Previous order status (null for initial order creation)
+          example: "PENDIENTE"
+        newStatus:
+          type: string
+          enum: [PENDIENTE, EN_PREPARACION, LISTO, ENTREGADO, CANCELADO]
+          description: New order status after the state transition
+          example: "EN_PREPARACION"
+        timestamp:
+          type: string
+          format: date-time
+          description: Exact timestamp when the state change occurred
+          example: "2025-09-02T09:31:24.299"
+        employeeId:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID of the employee who performed the action (null for system-generated events)
+          example: 3
+        employeeName:
+          type: string
+          nullable: true
+          description: |
+            Name of the employee who performed the action.
+            Resolved from Users service with fallback logic:
+            1. firstName + lastName (if available)
+            2. name + surname (alternative mapping)
+            3. email username (as fallback)
+            null for system-generated events like order creation.
+          example: "employee"
+      required:
+        - id
+        - orderId
+        - newStatus
+        - timestamp
+
+    RestaurantMetricsResponse:
+      type: object
+      description: |
+        Restaurant efficiency metrics response with time values formatted as MM:SS for better readability.
+        This endpoint is part of HU-018 "Consultar Eficiencia" functionality.
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+          description: Unique identifier of the restaurant
+          example: 1
+        restaurantName:
+          type: string
+          description: Name of the restaurant
+          example: "Restaurante Gourmet"
+        totalOrders:
+          type: integer
+          description: Total number of orders processed in the period
+          example: 15
+        averagePreparationTime:
+          type: string
+          description: "Average preparation time in MM:SS format (e.g., '29:00' for 29 minutes)"
+          example: "29:00"
+        averageDeliveryTime:
+          type: string
+          description: "Average total delivery time in MM:SS format (e.g., '1:19' for 1 minute and 19 seconds)"
+          example: "1:19"
+        periodStart:
+          type: string
+          format: date
+          description: Start date of the metrics period
+          example: "2024-01-01"
+        periodEnd:
+          type: string
+          format: date
+          description: End date of the metrics period
+          example: "2024-12-31"
+        employeeRankings:
+          type: array
+          description: List of employee metrics ranked by efficiency (best performers first)
+          items:
+            $ref: '#/components/schemas/EmployeeMetricsResponse'
+
+    EmployeeMetricsResponse:
+      type: object
+      description: |
+        Individual employee efficiency metrics with time values in MM:SS format.
+        Part of the employee ranking system in HU-018 "Consultar Eficiencia".
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+          description: Unique identifier of the employee
+          example: 8
+        employeeName:
+          type: string
+          description: Full name of the employee
+          example: "María González"
+        ordersProcessed:
+          type: integer
+          description: Total number of orders processed by this employee
+          example: 8
+        averagePreparationTime:
+          type: string
+          description: "Average preparation time in MM:SS format (e.g., '0:48' for 48 seconds)"
+          example: "0:48"
+        averageDeliveryTime:
+          type: string
+          description: "Average total delivery time in MM:SS format (e.g., '1:52' for 1 minute and 52 seconds)"
+          example: "1:52"
+        efficiencyRank:
+          type: integer
+          description: "Efficiency ranking among restaurant employees (1 = best performer, 2 = second best, etc.)"
+          example: 1
 
 
 

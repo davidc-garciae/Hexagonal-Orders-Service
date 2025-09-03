@@ -8,11 +8,15 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.MDC;
+import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
+@Order(2) // Ejecutar DESPUÉS del JwtAuthenticationFilter
 public class CorrelationFilter extends OncePerRequestFilter {
 
   @Override
@@ -26,7 +30,7 @@ public class CorrelationFilter extends OncePerRequestFilter {
         Optional.ofNullable(request.getHeader("X-Request-Id")).orElse(UUID.randomUUID().toString());
 
     MDC.put("requestId", requestId);
-    putIfPresent("userId", request.getHeader("X-User-Id"));
+    extractUserIdFromJwt();
 
     try {
       filterChain.doFilter(request, response);
@@ -35,9 +39,22 @@ public class CorrelationFilter extends OncePerRequestFilter {
     }
   }
 
-  private void putIfPresent(String key, String value) {
-    if (value != null && !value.isBlank()) {
-      MDC.put(key, value);
+  /** Extract userId from JWT authentication instead of headers */
+  private void extractUserIdFromJwt() {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      if (authentication != null) {
+        Object details = authentication.getDetails();
+        if (details instanceof JwtAuthenticationFilter.AuthDetails authDetails) {
+          String userId = authDetails.getUserId();
+          if (userId != null && !userId.isBlank()) {
+            MDC.put("userId", userId);
+          }
+        }
+      }
+    } catch (Exception e) {
+      // Silently ignore JWT extraction errors for correlation
+      // This is non-critical functionality
     }
   }
 }

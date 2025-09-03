@@ -15,7 +15,7 @@ public class SecurityConfiguration {
 
   @Bean
   public SecurityFilterChain securityFilterChain(
-      HttpSecurity http, HeaderAuthenticationFilter headerFilter) throws Exception {
+      HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
@@ -26,12 +26,13 @@ public class SecurityConfiguration {
                         "/swagger-ui.html",
                         "/v3/api-docs/**",
                         "/v3/api-docs.yaml",
-                        "/api/v1/auth/login",
-                        "/api/v1/users/customer")
+                        "/api/v1/debug/**")
                     .permitAll()
+                    .requestMatchers("/api/v1/**")
+                    .authenticated()
                     .anyRequest()
-                    .authenticated())
-        .addFilterBefore(headerFilter, UsernamePasswordAuthenticationFilter.class);
+                    .permitAll())
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
 }

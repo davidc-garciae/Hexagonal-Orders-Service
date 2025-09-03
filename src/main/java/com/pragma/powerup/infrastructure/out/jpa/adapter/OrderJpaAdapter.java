@@ -60,6 +60,22 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
   }
 
   @Override
+  public PagedResult<Order> findByCustomer(Long customerId, int page, int size) {
+    Page<OrderEntity> p = orderRepository.findByCustomerId(customerId, PageRequest.of(page, size));
+    List<Order> content = p.getContent().stream().map(orderEntityMapper::toModel).toList();
+    return new PagedResult<>(content, page, size, p.getTotalElements(), p.getTotalPages());
+  }
+
+  @Override
+  public PagedResult<Order> findByCustomerAndStatus(
+      Long customerId, OrderStatus status, int page, int size) {
+    Page<OrderEntity> p =
+        orderRepository.findByCustomerIdAndStatus(customerId, status, PageRequest.of(page, size));
+    List<Order> content = p.getContent().stream().map(orderEntityMapper::toModel).toList();
+    return new PagedResult<>(content, page, size, p.getTotalElements(), p.getTotalPages());
+  }
+
+  @Override
   public java.util.Optional<Order> findById(Long orderId) {
     return orderRepository.findById(orderId).map(orderEntityMapper::toModel);
   }
